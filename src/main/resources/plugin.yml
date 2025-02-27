@@ -1,0 +1,7 @@
+name: FrizzlenMod
+version: '1.0-SNAPSHOT'
+main: org.frizzlenpop.frizzlenMod.FrizzlenMod
+api-version: '1.21'
+load: STARTUP
+authors: [ frizzlenpop ]
+description: A Plugin for Server Moderation
