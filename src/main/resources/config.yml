@@ -1,0 +1,120 @@
+# FrizzlenMod Configuration File
+# Documentation: https://github.com/frizzlenpop/frizzlenMod
+
+# General plugin settings
+general:
+  # How often to save data (in minutes)
+  save-interval: 5
+  # Enable debug logging
+  debug: false
+  # Default language (currently only 'en' is supported)
+  language: 'en'
+
+# Web API settings
+web-api:
+  # Enable or disable the web API
+  enabled: true
+  # Port to run the web API on
+  port: 8080
+  # Secret key for JWT authentication (CHANGE THIS!)
+  jwt-secret: "change-this-to-a-secure-random-string"
+  # Enable CORS for the web API (needed for external web interfaces)
+  cors-enabled: false
+  # Dashboard refresh interval (in seconds)
+  dashboard-refresh: 30
+  # Maximum age for JWT tokens (in hours)
+  token-expiry: 24
+
+# Player warning settings
+warnings:
+  # Number of warnings before player gets muted
+  mute-threshold: 3
+  # Number of warnings before player gets kicked
+  kick-threshold: 5
+  # Number of warnings before player gets temporarily banned
+  temp-ban-threshold: 7
+  # Number of warnings before player gets permanently banned
+  ban-threshold: 10
+  # Duration of temporary ban when exceeding temp-ban-threshold
+  temp-ban-duration: "1d"
+  # Whether to reset warnings after a ban
+  reset-after-ban: true
+  # How long warnings last before expiring (0 = never expire)
+  warning-expiry-days: 30
+
+# Appeal system settings
+appeals:
+  # Enable or disable the appeal system
+  enabled: true
+  # Days between allowed appeals
+  cooldown: 7
+  # Maximum number of appeals per ban
+  max-appeals: 3
+  # Notify staff in-game when a new appeal is submitted
+  notify-staff: true
+  # Appeal instructions shown to banned players
+  instructions: "You have been banned from this server. To appeal your ban, visit http://example.com/appeal"
+
+# Chat management settings
+chat:
+  # Enable anti-spam filtering
+  anti-spam: true
+  # Maximum duplicate messages allowed in a row
+  max-duplicate-messages: 3
+  # Cooldown between messages (in seconds)
+  message-cooldown: 1
+  # Default slow mode time (in seconds) when enabled
+  default-slow-mode: 5
+  # Filter offensive language
+  filter-language: true
+  # Words to filter (will be replaced with asterisks)
+  filtered-words: []
+
+# Jail settings
+jail:
+  # Enable the jail system
+  enabled: true
+  # Default jail time (in minutes)
+  default-time: 15
+  # Whether to save jail location between server restarts
+  persistent: true
+  # Send message to all players when someone is jailed
+  broadcast-jail: true
+
+# Vanish settings
+vanish:
+  # Hide vanished players in tab list
+  hide-in-tab: true
+  # Hide join/leave messages for vanished players
+  hide-join-leave: true
+  # Allow vanished players to pick up items
+  allow-pickup: false
+  # Allow vanished players to interact with the world
+  allow-interaction: true
+
+# Storage settings
+storage:
+  # Type of storage to use (file, mysql)
+  type: "file"
+  # MySQL settings (only used if type is 'mysql')
+  mysql:
+    host: "localhost"
+    port: 3306
+    database: "frizzlenmod"
+    username: "root"
+    password: "password"
+    prefix: "fm_"
+    useSSL: false
+
+# Discord integration (if applicable)
+discord:
+  # Enable Discord integration
+  enabled: false
+  # Discord bot token
+  token: ""
+  # Channel ID for logging moderation actions
+  log-channel: ""
+  # Channel ID for ban appeals
+  appeals-channel: ""
+  # Whether to sync punishments with Discord roles
+  sync-punishments: false 
