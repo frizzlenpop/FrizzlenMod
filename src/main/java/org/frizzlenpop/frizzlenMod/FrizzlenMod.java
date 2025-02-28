@@ -3,6 +3,7 @@ package org.frizzlenpop.frizzlenMod;
 import org.bukkit.Bukkit;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.frizzlenpop.frizzlenMod.api.WebApiManager;
 import org.frizzlenpop.frizzlenMod.commands.*;
 import org.frizzlenpop.frizzlenMod.listeners.*;
 import org.frizzlenpop.frizzlenMod.managers.*;
@@ -23,6 +24,7 @@ public final class FrizzlenMod extends JavaPlugin {
     private VanishManager vanishManager;
     private ChatManager chatManager;
     private UserManager userManager;
+    private WebApiManager webApiManager;
     private Logger logger;
     
     @Override
@@ -48,6 +50,12 @@ public final class FrizzlenMod extends JavaPlugin {
         
         // Register listeners
         registerListeners();
+        
+        // Initialize and start web API if enabled
+        if (getConfig().getBoolean("web-api.enabled", true)) {
+            webApiManager = new WebApiManager(this);
+            webApiManager.start();
+        }
         
         // Log successful startup
         logger.info("FrizzlenMod has been enabled!");
@@ -93,6 +101,11 @@ public final class FrizzlenMod extends JavaPlugin {
     
     @Override
     public void onDisable() {
+        // Stop web API if it's running
+        if (webApiManager != null) {
+            webApiManager.stop();
+        }
+        
         // Save all data
         if (storageManager != null) {
             storageManager.saveAll();
@@ -134,5 +147,9 @@ public final class FrizzlenMod extends JavaPlugin {
     
     public UserManager getUserManager() {
         return userManager;
+    }
+    
+    public WebApiManager getWebApiManager() {
+        return webApiManager;
     }
 }

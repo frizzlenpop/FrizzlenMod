@@ -136,7 +136,7 @@ function fixPunishmentModalIDs() {
     // Fix forms
     const banPlayerForm = document.getElementById('ban-player-form');
     if (banPlayerForm) {
-        banPlayerForm.addEventListener('submit', handleBanPlayer);
+        console.log('Ban player form found, event handler should be set in main.js');
     }
     
     // Fix modal IDs
@@ -148,7 +148,7 @@ function fixPunishmentModalIDs() {
     // Fix other potential ID mismatches
     const mutePlayerForm = document.getElementById('mute-player-form');
     if (mutePlayerForm) {
-        mutePlayerForm.addEventListener('submit', handleMutePlayer);
+        console.log('Mute player form found, event handler should be set in main.js');
     }
     
     const muteModal = document.getElementById('mute-player-modal');

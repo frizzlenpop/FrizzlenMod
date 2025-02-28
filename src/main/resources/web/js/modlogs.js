@@ -11,8 +11,17 @@
  */
 async function loadModLogs(page = 0, filter = null, filterParams = {}) {
     try {
+        console.log("Loading mod logs with page:", page, "filter:", filter);
+        
         // Show loading indicator
         showSpinner('modlogs-container');
+        
+        // Clear any previous error messages
+        const errorElement = document.getElementById('modlogs-error');
+        if (errorElement) {
+            errorElement.innerHTML = '';
+            errorElement.style.display = 'none';
+        }
         
         // Build the API URL based on filter
         let url;
@@ -26,22 +35,50 @@ async function loadModLogs(page = 0, filter = null, filterParams = {}) {
             url = API.modlogs.all(page, PAGE_SIZE);
         }
         
+        console.log("Fetching from URL:", url);
+        
         // Fetch moderation logs
         const response = await apiGet(url);
+        console.log("Mod logs API response:", response);
         
-        if (response && response.success) {
-            // Display moderation logs
-            displayModLogs(response.logs, response);
+        // Check for various response formats and adapt accordingly
+        if (response && (response.success || response.logs)) {
+            // Display moderation logs - some APIs might return logs directly, others nested
+            const logs = response.logs || response;
+            // Pass pagination if available
+            const paginationInfo = response.pagination || {
+                page: page,
+                totalPages: response.totalPages || 1
+            };
+            
+            displayModLogs(logs, paginationInfo);
             
             // Update filter UI
             updateModLogsFilterUI(filter, filterParams);
         } else {
+            console.error("Failed to load mod logs:", response?.error || "Unknown error");
             showErrorMessage('Failed to load moderation logs: ' + (response?.error || 'Unknown error'), 'modlogs-error');
         }
         
     } catch (error) {
         console.error('Error loading moderation logs:', error);
         showErrorMessage('Failed to load moderation logs: ' + error.message, 'modlogs-error');
+    }
+}
+
+/**
+ * Shows an error message in the specified container
+ * 
+ * @param {string} message The error message to show
+ * @param {string} containerId The ID of the container element
+ */
+function showErrorMessage(message, containerId) {
+    const container = document.getElementById(containerId);
+    if (container) {
+        container.innerHTML = `<div class="alert alert-danger">${message}</div>`;
+        container.style.display = 'block';
+    } else {
+        console.error(`Error container ${containerId} not found`);
     }
 }
 

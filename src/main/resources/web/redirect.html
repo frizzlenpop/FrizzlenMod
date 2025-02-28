@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Redirecting...</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            padding-top: 100px;
+        }
+        .spinner {
+            display: inline-block;
+            width: 50px;
+            height: 50px;
+            border: 3px solid rgba(0,0,0,.3);
+            border-radius: 50%;
+            border-top-color: #3498db;
+            animation: spin 1s ease-in-out infinite;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
+    <script>
+        // Add a short delay to ensure browser processes everything
+        setTimeout(function() {
+            // Add a cache-busting parameter to ensure the page reloads properly
+            window.location.href = "index.html?cache=" + new Date().getTime() + "&auth=true";
+        }, 500);
+    </script>
+</head>
+<body>
+    <h2>Redirecting to admin panel...</h2>
+    <div class="spinner"></div>
+    <p>If you are not redirected automatically, <a href="index.html">click here</a>.</p>
+</body>
+</html> 

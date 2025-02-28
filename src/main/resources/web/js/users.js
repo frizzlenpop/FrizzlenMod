@@ -7,16 +7,30 @@
  */
 async function loadUsers() {
     try {
+        console.log("Loading users list");
+        
         // Show loading indicator
         showSpinner('users-container');
         
-        // Fetch users data
-        const response = await apiGet(API.users.all());
+        // Clear any previous error messages
+        const errorElement = document.getElementById('users-error');
+        if (errorElement) {
+            errorElement.innerHTML = '';
+            errorElement.style.display = 'none';
+        }
         
-        if (response && response.success) {
-            // Display users
-            displayUsers(response.users);
+        // Fetch users data
+        console.log("Fetching users from URL:", API.users.all());
+        const response = await apiGet(API.users.all());
+        console.log("Users API response:", response);
+        
+        // Check for various response formats and adapt accordingly
+        if (response && (response.success || response.users)) {
+            // Display users - some APIs might return users directly, others nested
+            const users = response.users || response;
+            displayUsers(users);
         } else {
+            console.error("Failed to load users:", response?.error || "Unknown error");
             showErrorMessage('Failed to load users: ' + (response?.error || 'Unknown error'), 'users-error');
         }
         
@@ -279,6 +293,24 @@ async function deleteUser(username) {
     } finally {
         // Hide loading indicator
         showLoading(false);
+    }
+}
+
+/**
+ * Shows an error message in the specified container if not already defined elsewhere
+ * 
+ * @param {string} message The error message to show
+ * @param {string} containerId The ID of the container element
+ */
+if (typeof showErrorMessage !== 'function') {
+    function showErrorMessage(message, containerId) {
+        const container = document.getElementById(containerId);
+        if (container) {
+            container.innerHTML = `<div class="alert alert-danger">${message}</div>`;
+            container.style.display = 'block';
+        } else {
+            console.error(`Error container ${containerId} not found`);
+        }
     }
 }
 

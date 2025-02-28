@@ -65,80 +65,27 @@ const API = {
 };
 
 /**
- * Makes an API request with the auth token
- * 
- * @param {string} url The API URL
- * @param {Object} options Fetch options
- * @returns {Promise} The fetch promise
- */
-async function apiRequest(url, options = {}) {
-    const token = localStorage.getItem('token');
-    
-    // Set default options
-    const defaultOptions = {
-        headers: {
-            'Content-Type': 'application/json',
-        },
-    };
-    
-    // Add authorization header if token exists
-    if (token) {
-        defaultOptions.headers['Authorization'] = `Bearer ${token}`;
-    }
-    
-    // Merge options
-    const mergedOptions = {
-        ...defaultOptions,
-        ...options,
-        headers: {
-            ...defaultOptions.headers,
-            ...options.headers,
-        },
-    };
-    
-    try {
-        const response = await fetch(url, mergedOptions);
-        
-        // If unauthorized, logout
-        if (response.status === 401) {
-            logout();
-            return null;
-        }
-        
-        // Parse the JSON response
-        const data = await response.json();
-        
-        // Check for API errors
-        if (!response.ok) {
-            throw new Error(data.error || 'API Error');
-        }
-        
-        return data;
-    } catch (error) {
-        console.error('API Request Error:', error);
-        throw error;
-    }
-}
-
-/**
  * Makes a GET request to the API
  * 
  * @param {string} url The API URL
- * @returns {Promise} The fetch promise
+ * @param {Object} options Additional fetch options
+ * @returns {Promise<Object>} The API response
  */
-async function apiGet(url) {
-    return apiRequest(url, { method: 'GET' });
+async function apiGet(url, options = {}) {
+    return apiRequest(url, { ...options, method: 'GET' });
 }
 
 /**
  * Makes a POST request to the API
  * 
  * @param {string} url The API URL
- * @param {Object} data The data to send
- * @returns {Promise} The fetch promise
+ * @param {Object} data The request body data
+ * @param {Object} options Additional fetch options
+ * @returns {Promise<Object>} The API response
  */
-async function apiPost(url, data) {
+async function apiPost(url, data = {}, options = {}) {
     return apiRequest(url, {
+        ...options,
         method: 'POST',
         body: JSON.stringify(data),
     });
@@ -148,11 +95,13 @@ async function apiPost(url, data) {
  * Makes a PUT request to the API
  * 
  * @param {string} url The API URL
- * @param {Object} data The data to send
- * @returns {Promise} The fetch promise
+ * @param {Object} data The request body data
+ * @param {Object} options Additional fetch options
+ * @returns {Promise<Object>} The API response
  */
-async function apiPut(url, data) {
+async function apiPut(url, data = {}, options = {}) {
     return apiRequest(url, {
+        ...options,
         method: 'PUT',
         body: JSON.stringify(data),
     });
@@ -162,10 +111,11 @@ async function apiPut(url, data) {
  * Makes a DELETE request to the API
  * 
  * @param {string} url The API URL
- * @returns {Promise} The fetch promise
+ * @param {Object} options Additional fetch options
+ * @returns {Promise<Object>} The API response
  */
-async function apiDelete(url) {
-    return apiRequest(url, { method: 'DELETE' });
+async function apiDelete(url, options = {}) {
+    return apiRequest(url, { ...options, method: 'DELETE' });
 }
 
 /**
@@ -174,7 +124,20 @@ async function apiDelete(url) {
  * @param {string} message The error message
  */
 function showError(message) {
-    alert(message);
+    // First try to find login-error element - specifically for login page
+    const loginError = document.getElementById('login-error');
+    if (loginError) {
+        loginError.textContent = message;
+        loginError.classList.remove('d-none');
+        
+        // Auto-hide after 5 seconds
+        setTimeout(() => {
+            loginError.classList.add('d-none');
+        }, 5000);
+    } else {
+        // Fallback to alert if login-error element not found
+        alert(message);
+    }
 }
 
 /**
@@ -256,7 +219,15 @@ function truncateString(str, maxLength = 100) {
 function showSpinner(containerId) {
     const container = document.getElementById(containerId);
     if (container) {
-        container.innerHTML = '<div class="spinner-container"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div></div>';
+        // Check if the container is a table body
+        if (container.tagName === 'TBODY') {
+            // For table bodies, create a row with a spinner that spans all columns
+            const columnCount = container.closest('table')?.querySelector('thead tr')?.children.length || 6;
+            container.innerHTML = `<tr><td colspan="${columnCount}" class="text-center"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div></td></tr>`;
+        } else {
+            // For regular containers
+            container.innerHTML = '<div class="spinner-container"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div></div>';
+        }
     }
 }
 
@@ -270,5 +241,117 @@ function showErrorMessage(message, containerId) {
     const container = document.getElementById(containerId);
     if (container) {
         container.innerHTML = `<div class="alert alert-danger">${message}</div>`;
+    }
+}
+
+/**
+ * Makes a request to the API
+ * 
+ * @param {string} url The API URL
+ * @param {Object} options The fetch options
+ * @returns {Promise<Object>} The API response
+ */
+async function apiRequest(url, options = {}) {
+    const token = getToken();
+    
+    // Default options
+    const defaultOptions = {
+        method: 'GET',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+    };
+    
+    // Add authorization header if token exists
+    if (token) {
+        defaultOptions.headers['Authorization'] = `Bearer ${token}`;
+    }
+    
+    // Merge options
+    const mergedOptions = {
+        ...defaultOptions,
+        ...options,
+        headers: {
+            ...defaultOptions.headers,
+            ...options.headers,
+        },
+    };
+    
+    try {
+        // For debugging
+        console.log(`API Request to ${url}`, mergedOptions);
+        
+        const response = await fetch(url, mergedOptions);
+        console.log(`API Response status: ${response.status}`);
+        
+        // If unauthorized, logout - but not for the login endpoint itself
+        if (response.status === 401 && !url.includes('/api/auth/login')) {
+            logout();
+            return {
+                success: false,
+                error: 'Authentication required. Please log in again.'
+            };
+        }
+        
+        // For all responses, try to parse the body
+        let data;
+        try {
+            // Parse the JSON response
+            const textResponse = await response.text();
+            console.log(`API Response text (first 100 chars): ${textResponse.substring(0, 100)}...`);
+            
+            // Only parse if we have content
+            if (textResponse && textResponse.trim()) {
+                // Sometimes we might get HTML instead of JSON when an endpoint doesn't exist
+                if (textResponse.trim().startsWith('{') || textResponse.trim().startsWith('[')) {
+                    data = JSON.parse(textResponse);
+                } else {
+                    console.warn('Received non-JSON response:', textResponse.substring(0, 100));
+                    // For non-JSON responses, return a structured error
+                    return {
+                        success: false,
+                        error: 'Endpoint returned non-JSON response'
+                    };
+                }
+            } else {
+                // Empty response
+                data = {};
+            }
+        } catch (error) {
+            console.error('Error parsing API response:', error);
+            return {
+                success: false,
+                error: 'Invalid response from server'
+            };
+        }
+        
+        // If the response contains specific error data, use it
+        if (data && data.error) {
+            return {
+                success: false,
+                error: data.error
+            };
+        }
+        
+        // If response was not OK (200-299), return an error
+        if (!response.ok) {
+            return {
+                success: false,
+                error: data?.error || `Server returned error code: ${response.status}`
+            };
+        }
+        
+        // Ensure the success property is set if not explicitly included in the response
+        if (data && typeof data.success === 'undefined') {
+            data.success = true;
+        }
+        
+        return data;
+    } catch (error) {
+        console.error('API Request Error:', error);
+        return {
+            success: false,
+            error: error.message || 'Network error'
+        };
     }
 } 

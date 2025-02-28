@@ -1,0 +1,80 @@
+/* Login container styles */
+.login-container {
+    width: 100%;
+    max-width: 400px;
+    margin: 100px auto 0;
+    background-color: #fff;
+    border-radius: 8px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+    overflow: hidden;
+}
+
+.login-container .logo {
+    padding: 30px 20px;
+    text-align: center;
+    background-color: #1e293b;
+    color: white;
+}
+
+.login-container .logo h1 {
+    font-size: 28px;
+    margin-bottom: 5px;
+}
+
+.login-container .logo p {
+    font-size: 14px;
+    margin: 0;
+    opacity: 0.8;
+}
+
+.login-form {
+    padding: 30px;
+}
+
+.login-form h2 {
+    margin-bottom: 20px;
+    color: #1e293b;
+    text-align: center;
+}
+
+.input-group {
+    margin-bottom: 20px;
+}
+
+.input-group label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 500;
+    color: #4a5568;
+}
+
+.input-group input {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #e2e8f0;
+    border-radius: 4px;
+    font-size: 16px;
+}
+
+.error-message {
+    color: #e53e3e;
+    margin-bottom: 15px;
+    font-size: 14px;
+    min-height: 20px;
+}
+
+#loginButton {
+    width: 100%;
+    padding: 12px;
+    background-color: #3182ce;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    font-size: 16px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+#loginButton:hover {
+    background-color: #2c5282;
+} 

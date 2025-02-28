@@ -10,29 +10,68 @@
  */
 async function loadAppeals(page = 0, status = null) {
     try {
+        console.log("Loading appeals with page:", page, "status:", status);
+        
         // Show loading indicator
         showSpinner('appeals-container');
+        
+        // Clear any previous error messages
+        const errorElement = document.getElementById('appeals-error');
+        if (errorElement) {
+            errorElement.innerHTML = '';
+            errorElement.style.display = 'none';
+        }
         
         // Fetch appeals data
         let url = status ? 
             API.appeals.byStatus(status, page, PAGE_SIZE) : 
             API.appeals.all(page, PAGE_SIZE);
         
-        const response = await apiGet(url);
+        console.log("Fetching appeals from URL:", url);
         
-        if (response && response.success) {
-            // Display appeals
-            displayAppeals(response.appeals, response);
+        const response = await apiGet(url);
+        console.log("Appeals API response:", response);
+        
+        // Check for various response formats and adapt accordingly
+        if (response && (response.success || response.appeals)) {
+            // Display appeals - some APIs might return appeals directly, others nested
+            const appeals = response.appeals || response;
+            // Pass pagination if available
+            const paginationInfo = response.pagination || {
+                page: page,
+                totalPages: response.totalPages || 1
+            };
+            
+            displayAppeals(appeals, paginationInfo);
             
             // Update status filter UI
             updateAppealsStatusFilter(status);
         } else {
+            console.error("Failed to load appeals:", response?.error || "Unknown error");
             showErrorMessage('Failed to load appeals: ' + (response?.error || 'Unknown error'), 'appeals-error');
         }
         
     } catch (error) {
         console.error('Error loading appeals:', error);
         showErrorMessage('Failed to load appeals: ' + error.message, 'appeals-error');
+    }
+}
+
+/**
+ * Shows an error message in the specified container if not already defined elsewhere
+ * 
+ * @param {string} message The error message to show
+ * @param {string} containerId The ID of the container element
+ */
+if (typeof showErrorMessage !== 'function') {
+    function showErrorMessage(message, containerId) {
+        const container = document.getElementById(containerId);
+        if (container) {
+            container.innerHTML = `<div class="alert alert-danger">${message}</div>`;
+            container.style.display = 'block';
+        } else {
+            console.error(`Error container ${containerId} not found`);
+        }
     }
 }
 

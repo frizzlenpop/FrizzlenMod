@@ -6,10 +6,8 @@ import org.bukkit.Bukkit;
 import org.frizzlenpop.frizzlenMod.FrizzlenMod;
 import org.frizzlenpop.frizzlenMod.api.controllers.AppealsController;
 import org.frizzlenpop.frizzlenMod.api.controllers.AuthController;
-import org.frizzlenpop.frizzlenMod.api.controllers.DashboardController;
 import org.frizzlenpop.frizzlenMod.api.controllers.ModLogsController;
 import org.frizzlenpop.frizzlenMod.api.controllers.PunishmentsController;
-import org.frizzlenpop.frizzlenMod.api.controllers.UsersController;
 import org.frizzlenpop.frizzlenMod.api.middleware.AuthMiddleware;
 import org.frizzlenpop.frizzlenMod.api.middleware.CorsMiddleware;
 import spark.Spark;
@@ -28,10 +26,8 @@ public class WebApiManager {
     
     private AppealsController appealsController;
     private AuthController authController;
-    private DashboardController dashboardController;
     private ModLogsController modLogsController;
     private PunishmentsController punishmentsController;
-    private UsersController usersController;
     
     public WebApiManager(FrizzlenMod plugin) {
         this.plugin = plugin;
@@ -53,10 +49,8 @@ public class WebApiManager {
     private void initializeControllers() {
         this.appealsController = new AppealsController(plugin, gson);
         this.authController = new AuthController(plugin, gson, jwtSecret);
-        this.dashboardController = new DashboardController(plugin, gson);
         this.modLogsController = new ModLogsController(plugin, gson);
         this.punishmentsController = new PunishmentsController(plugin, gson);
-        this.usersController = new UsersController(plugin, gson);
     }
     
     /**
@@ -79,26 +73,8 @@ public class WebApiManager {
             
             // Add explicit route for root path to serve index.html
             get("/", (req, res) -> {
-                File indexFile = new File(webPath, "index.html");
-                if (indexFile.exists()) {
-                    res.type("text/html");
-                    return new String(java.nio.file.Files.readAllBytes(indexFile.toPath()));
-                } else {
-                    res.status(404);
-                    return "Index file not found";
-                }
-            });
-            
-            // Add explicit route for wrapper.html
-            get("/wrapper.html", (req, res) -> {
-                File wrapperFile = new File(webPath, "wrapper.html");
-                if (wrapperFile.exists()) {
-                    res.type("text/html");
-                    return new String(java.nio.file.Files.readAllBytes(wrapperFile.toPath()));
-                } else {
-                    res.status(404);
-                    return "Wrapper file not found";
-                }
+                res.redirect("/index.html");
+                return null;
             });
             
             // Public routes
@@ -113,11 +89,6 @@ public class WebApiManager {
                 // Protected routes
                 path("/admin", () -> {
                     before("/*", new AuthMiddleware(jwtSecret));
-                    
-                    // Dashboard routes
-                    get("/dashboard/stats", dashboardController::getStats);
-                    get("/dashboard/recent-logs", dashboardController::getRecentLogs);
-                    get("/dashboard/recent-appeals", dashboardController::getRecentAppeals);
                     
                     // Punishment management
                     get("/punishments", punishmentsController::getAllPunishments);
@@ -141,20 +112,6 @@ public class WebApiManager {
                     // Moderation logs
                     get("/logs", modLogsController::getAllLogs);
                     get("/logs/:player", modLogsController::getPlayerLogs);
-                    
-                    // Add modlogs endpoints (aligned with what frontend expects)
-                    get("/modlogs", modLogsController::getAllLogs);
-                    get("/modlogs/player/:player", modLogsController::getPlayerLogs);
-                    get("/modlogs/action/:action", modLogsController::getLogsByAction);
-                    get("/modlogs/timerange", modLogsController::getLogsByTimeRange);
-                    
-                    // User management endpoints
-                    get("/users", usersController::getAllUsers);
-                    post("/users", usersController::createUser);
-                    get("/users/:username", usersController::getUser);
-                    put("/users/:username/password", usersController::updatePassword);
-                    put("/users/:username/role", usersController::updateRole);
-                    delete("/users/:username", usersController::deleteUser);
                 });
             });
             

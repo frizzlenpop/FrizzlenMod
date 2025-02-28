@@ -140,4 +140,150 @@ public class ModLogsController {
             return gson.toJson(Map.of("error", "Internal server error"));
         }
     }
+    
+    /**
+     * Get moderation logs filtered by action type (admin)
+     */
+    public Object getLogsByAction(Request request, Response response) {
+        try {
+            String action = request.params(":action");
+            List<ModLog> logs = new ArrayList<>();
+            
+            // Parse pagination parameters
+            int page = Integer.parseInt(request.queryParams("page") != null ? request.queryParams("page") : "0");
+            int size = Integer.parseInt(request.queryParams("size") != null ? request.queryParams("size") : "10");
+            
+            // Get all log keys
+            Set<String> logKeys = modLogsConfig.getKeys(false);
+            List<ModLog> allActionLogs = new ArrayList<>();
+            
+            for (String key : logKeys) {
+                ConfigurationSection section = modLogsConfig.getConfigurationSection(key);
+                
+                if (section != null) {
+                    String logAction = section.getString("action", "");
+                    
+                    if (logAction.equalsIgnoreCase(action)) {
+                        ModLog log = new ModLog();
+                        log.setId(key);
+                        log.setModerator(section.getString("moderator", "Unknown"));
+                        log.setAction(logAction);
+                        log.setTarget(section.getString("target", "Unknown"));
+                        log.setReason(section.getString("reason", ""));
+                        log.setDuration(section.getString("duration", ""));
+                        log.setTimestamp(section.getLong("timestamp", 0));
+                        
+                        allActionLogs.add(log);
+                    }
+                }
+            }
+            
+            // Sort by timestamp (newest first)
+            allActionLogs.sort((l1, l2) -> Long.compare(l2.getTimestamp(), l1.getTimestamp()));
+            
+            // Apply pagination
+            int totalLogs = allActionLogs.size();
+            int totalPages = (int) Math.ceil((double) totalLogs / size);
+            
+            int start = page * size;
+            int end = Math.min(start + size, totalLogs);
+            
+            if (start < totalLogs) {
+                logs = allActionLogs.subList(start, end);
+            }
+            
+            // Create pagination metadata
+            Map<String, Object> pagination = new HashMap<>();
+            pagination.put("page", page);
+            pagination.put("size", size);
+            pagination.put("totalLogs", totalLogs);
+            pagination.put("totalPages", totalPages);
+            
+            // Create response object
+            Map<String, Object> responseData = new HashMap<>();
+            responseData.put("logs", logs);
+            responseData.put("pagination", pagination);
+            
+            return gson.toJson(responseData);
+            
+        } catch (Exception e) {
+            plugin.getLogger().log(Level.SEVERE, "Error getting action logs: " + e.getMessage(), e);
+            response.status(500);
+            return gson.toJson(Map.of("error", "Internal server error"));
+        }
+    }
+    
+    /**
+     * Get moderation logs within a time range (admin)
+     */
+    public Object getLogsByTimeRange(Request request, Response response) {
+        try {
+            long start = Long.parseLong(request.queryParams("start") != null ? request.queryParams("start") : "0");
+            long end = Long.parseLong(request.queryParams("end") != null ? request.queryParams("end") : String.valueOf(System.currentTimeMillis()));
+            
+            // Parse pagination parameters
+            int page = Integer.parseInt(request.queryParams("page") != null ? request.queryParams("page") : "0");
+            int size = Integer.parseInt(request.queryParams("size") != null ? request.queryParams("size") : "10");
+            
+            List<ModLog> logs = new ArrayList<>();
+            
+            // Get all log keys
+            Set<String> logKeys = modLogsConfig.getKeys(false);
+            List<ModLog> allTimeRangeLogs = new ArrayList<>();
+            
+            for (String key : logKeys) {
+                ConfigurationSection section = modLogsConfig.getConfigurationSection(key);
+                
+                if (section != null) {
+                    long timestamp = section.getLong("timestamp", 0);
+                    
+                    if (timestamp >= start && timestamp <= end) {
+                        ModLog log = new ModLog();
+                        log.setId(key);
+                        log.setModerator(section.getString("moderator", "Unknown"));
+                        log.setAction(section.getString("action", "Unknown"));
+                        log.setTarget(section.getString("target", "Unknown"));
+                        log.setReason(section.getString("reason", ""));
+                        log.setDuration(section.getString("duration", ""));
+                        log.setTimestamp(timestamp);
+                        
+                        allTimeRangeLogs.add(log);
+                    }
+                }
+            }
+            
+            // Sort by timestamp (newest first)
+            allTimeRangeLogs.sort((l1, l2) -> Long.compare(l2.getTimestamp(), l1.getTimestamp()));
+            
+            // Apply pagination
+            int totalLogs = allTimeRangeLogs.size();
+            int totalPages = (int) Math.ceil((double) totalLogs / size);
+            
+            int startIndex = page * size;
+            int endIndex = Math.min(startIndex + size, totalLogs);
+            
+            if (startIndex < totalLogs) {
+                logs = allTimeRangeLogs.subList(startIndex, endIndex);
+            }
+            
+            // Create pagination metadata
+            Map<String, Object> pagination = new HashMap<>();
+            pagination.put("page", page);
+            pagination.put("size", size);
+            pagination.put("totalLogs", totalLogs);
+            pagination.put("totalPages", totalPages);
+            
+            // Create response object
+            Map<String, Object> responseData = new HashMap<>();
+            responseData.put("logs", logs);
+            responseData.put("pagination", pagination);
+            
+            return gson.toJson(responseData);
+            
+        } catch (Exception e) {
+            plugin.getLogger().log(Level.SEVERE, "Error getting time range logs: " + e.getMessage(), e);
+            response.status(500);
+            return gson.toJson(Map.of("error", "Internal server error"));
+        }
+    }
 } 

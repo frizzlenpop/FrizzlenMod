@@ -7,51 +7,142 @@ let currentSection = 'dashboard';
 const PAGE_SIZE = 10;
 
 /**
- * Initializes the admin panel
+ * Initializes the admin panel after login
  */
 function initAdminPanel() {
-    // Set up navigation
-    setupNavigation();
-    
-    // Load dashboard by default
-    loadDashboard();
-    
-    // Set up event listeners for various actions
-    setupEventListeners();
+    try {
+        console.log('Initializing admin panel');
+        
+        // First, ensure the admin panel is visible
+        const adminPanel = document.getElementById('admin-panel');
+        if (adminPanel) {
+            adminPanel.classList.remove('d-none');
+            adminPanel.style.display = 'block';
+            
+            // Also make sure login container is hidden
+            const loginContainer = document.getElementById('login-container');
+            if (loginContainer) {
+                loginContainer.style.display = 'none';
+            }
+        } else {
+            console.error('Admin panel element not found');
+            return;
+        }
+        
+        // Setup navigation
+        setupNavigation();
+        
+        // Load dashboard content
+        loadDashboard();
+        
+        // Set up event handlers
+        setupEventHandlers();
+        
+        console.log('Admin panel initialization complete');
+    } catch (error) {
+        console.error('Error initializing admin panel:', error);
+        
+        // Still ensure the admin panel is visible even if there's an error
+        const adminPanel = document.getElementById('admin-panel');
+        if (adminPanel) {
+            adminPanel.classList.remove('d-none');
+            adminPanel.setAttribute('style', 'display: block !important');
+            
+            // Also make sure login container is hidden
+            const loginContainer = document.getElementById('login-container');
+            if (loginContainer) {
+                loginContainer.classList.add('d-none');
+                loginContainer.setAttribute('style', 'display: none !important');
+            }
+            
+            // Create an error message
+            const errorDiv = document.createElement('div');
+            errorDiv.className = 'alert alert-danger m-3';
+            errorDiv.innerHTML = `
+                <h4 class="alert-heading">Error Initializing Admin Panel</h4>
+                <p>There was an error initializing the admin panel:</p>
+                <p><code>${error.message || 'Unknown error'}</code></p>
+                <hr>
+                <p class="mb-0">Some features may not work correctly. Please check the console for more details.</p>
+            `;
+            
+            // Add error message at the top of the admin panel
+            adminPanel.insertBefore(errorDiv, adminPanel.firstChild);
+        }
+    }
 }
 
 /**
- * Sets up navigation event listeners
+ * Sets up the navigation
  */
 function setupNavigation() {
-    const navLinks = document.querySelectorAll('.nav-link');
+    // Get all nav links
+    const navLinks = document.querySelectorAll('.nav-link[data-section]');
     
+    if (!navLinks || navLinks.length === 0) {
+        console.warn('No navigation links found');
+        return;
+    }
+    
+    // Add click event to each nav link
     navLinks.forEach(link => {
-        link.addEventListener('click', (e) => {
-            e.preventDefault();
+        link.addEventListener('click', function(event) {
+            event.preventDefault();
             
-            // Remove active class from all links
+            // Get the section ID
+            const sectionId = this.getAttribute('data-section');
+            
+            if (!sectionId) {
+                console.warn('Navigation link has no data-section attribute');
+                return;
+            }
+            
+            // Update current section
+            currentSection = sectionId;
+            
+            // Toggle active state
             navLinks.forEach(l => l.classList.remove('active'));
+            this.classList.add('active');
             
-            // Add active class to clicked link
-            link.classList.add('active');
-            
-            // Get the section ID from data attribute
-            const sectionId = link.dataset.section;
-            
-            // Hide all sections
-            document.querySelectorAll('.content-section').forEach(section => {
+            // Hide all content sections
+            const contentSections = document.querySelectorAll('.content-section');
+            contentSections.forEach(section => {
                 section.style.display = 'none';
             });
             
             // Show the selected section
-            document.getElementById(sectionId + '-section').style.display = 'block';
-            
-            // Load the section content
-            currentSection = sectionId;
-            loadSectionContent(sectionId);
+            const selectedSection = document.getElementById(`${sectionId}-section`);
+            if (selectedSection) {
+                selectedSection.style.display = 'block';
+                
+                // Load section content
+                loadSectionContent(sectionId);
+            } else {
+                console.warn(`Section with ID "${sectionId}-section" not found`);
+            }
         });
     });
+    
+    // Set dashboard as active by default
+    const dashboardLink = document.querySelector('.nav-link[data-section="dashboard"]');
+    if (dashboardLink) {
+        dashboardLink.classList.add('active');
+        
+        // Show dashboard section
+        const dashboardSection = document.getElementById('dashboard-section');
+        if (dashboardSection) {
+            dashboardSection.style.display = 'block';
+        } else {
+            console.warn('Dashboard section not found');
+        }
+        
+        // Hide other sections
+        document.querySelectorAll('.content-section:not(#dashboard-section)').forEach(section => {
+            section.style.display = 'none';
+        });
+    } else {
+        console.warn('Dashboard navigation link not found');
+    }
 }
 
 /**
@@ -60,29 +151,78 @@ function setupNavigation() {
  * @param {string} sectionId The ID of the section to load
  */
 function loadSectionContent(sectionId) {
-    switch (sectionId) {
-        case 'dashboard':
-            loadDashboard();
-            break;
-        case 'punishments':
-            loadPunishments();
-            break;
-        case 'appeals':
-            loadAppeals();
-            break;
-        case 'modlogs':
-            loadModLogs();
-            break;
-        case 'users':
-            loadUsers();
-            break;
+    console.log('Loading content for section:', sectionId);
+    
+    try {
+        switch (sectionId) {
+            case 'dashboard':
+                loadDashboard();
+                break;
+            case 'punishments':
+                if (typeof loadPunishments === 'function') {
+                    loadPunishments();
+                } else {
+                    console.error('loadPunishments function not found');
+                    showSectionError('punishments', 'The punishments module could not be loaded');
+                }
+                break;
+            case 'appeals':
+                if (typeof loadAppeals === 'function') {
+                    loadAppeals();
+                } else {
+                    console.error('loadAppeals function not found');
+                    showSectionError('appeals', 'The appeals module could not be loaded');
+                }
+                break;
+            case 'modlogs':
+                if (typeof loadModLogs === 'function') {
+                    loadModLogs();
+                } else {
+                    console.error('loadModLogs function not found');
+                    showSectionError('modlogs', 'The moderation logs module could not be loaded');
+                }
+                break;
+            case 'users':
+                if (typeof loadUsers === 'function') {
+                    loadUsers();
+                } else {
+                    console.error('loadUsers function not found');
+                    showSectionError('users', 'The user management module could not be loaded');
+                }
+                break;
+            default:
+                console.warn('Unknown section:', sectionId);
+                break;
+        }
+    } catch (error) {
+        console.error(`Error in loadSectionContent for ${sectionId}:`, error);
+        showSectionError(sectionId, error.message || 'An unexpected error occurred');
     }
 }
 
 /**
- * Sets up event listeners for various actions
+ * Shows an error message in the section's error container
+ * 
+ * @param {string} sectionId The section ID
+ * @param {string} message The error message
  */
-function setupEventListeners() {
+function showSectionError(sectionId, message) {
+    const errorContainer = document.getElementById(`${sectionId}-error`);
+    if (errorContainer) {
+        errorContainer.innerHTML = `
+            <div class="alert alert-danger">
+                <strong>Error:</strong> ${message}
+            </div>
+        `;
+    } else {
+        console.error(`Error container not found for section: ${sectionId}`);
+    }
+}
+
+/**
+ * Sets up event handlers for the admin panel
+ */
+function setupEventHandlers() {
     // Player search form
     const playerSearchForm = document.getElementById('player-search-form');
     if (playerSearchForm) {
@@ -128,7 +268,12 @@ function setupEventListeners() {
 function showSpinner(elementId) {
     const element = document.getElementById(elementId);
     if (element) {
-        element.innerHTML = '<div class="spinner-container"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div></div>';
+        // Check if this is a table body element
+        if (element.tagName === 'TBODY') {
+            element.innerHTML = '<tr><td colspan="7" class="text-center"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div></td></tr>';
+        } else {
+            element.innerHTML = '<div class="spinner-container"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div></div>';
+        }
     }
 }
 
@@ -184,29 +329,93 @@ async function loadDashboard() {
         showSpinner('recent-modlogs');
         showSpinner('recent-appeals');
         
-        // Fetch dashboard data
-        const statsResponse = await apiGet(API.dashboard.stats());
-        const recentLogsResponse = await apiGet(API.dashboard.recentModLogs());
-        const recentAppealsResponse = await apiGet(API.dashboard.recentAppeals());
-        
-        if (statsResponse && statsResponse.success) {
-            // Display dashboard stats
-            displayDashboardStats(statsResponse.data);
+        // Clear previous errors
+        const dashboardError = document.getElementById('dashboard-error');
+        if (dashboardError) {
+            dashboardError.innerHTML = '';
         }
         
-        if (recentLogsResponse && recentLogsResponse.success) {
-            // Display recent moderation logs
-            displayRecentModLogs(recentLogsResponse.data);
+        let hasErrors = false;
+        let hasData = false;
+        let errorMessage = '';
+        
+        try {
+            // Fetch dashboard stats
+            const statsResponse = await apiGet(API.dashboard.stats());
+            if (statsResponse && statsResponse.success) {
+                // Display dashboard stats
+                displayDashboardStats(statsResponse.data);
+                hasData = true;
+            } else if (statsResponse) {
+                errorMessage += `Stats: ${statsResponse.error || 'Unknown error'}<br>`;
+                hasErrors = true;
+            }
+        } catch (statsError) {
+            errorMessage += `Could not load dashboard stats.<br>`;
+            hasErrors = true;
+            console.error('Error loading stats:', statsError);
         }
         
-        if (recentAppealsResponse && recentAppealsResponse.success) {
-            // Display recent appeals
-            displayRecentAppeals(recentAppealsResponse.data);
+        // If we had errors with the stats, show a friendly message in the stats container
+        if (hasErrors && !hasData) {
+            const statsContainer = document.getElementById('dashboard-stats');
+            if (statsContainer) {
+                statsContainer.innerHTML = `
+                    <div class="alert alert-warning">
+                        <h5>Dashboard data unavailable</h5>
+                        <p>Backend API endpoints not found or not responding. This could be because:</p>
+                        <ul>
+                            <li>The server is still being developed and these endpoints are not implemented yet</li>
+                            <li>There is a configuration issue with the API endpoints</li>
+                        </ul>
+                    </div>
+                `;
+            }
         }
         
+        // Load recent moderation logs
+        try {
+            const logsResponse = await apiGet(API.dashboard.recentModLogs());
+            if (logsResponse && logsResponse.success) {
+                displayRecentModLogs(logsResponse.logs);
+            } else {
+                document.getElementById('recent-modlogs').innerHTML = `
+                    <div class="alert alert-warning">
+                        <p>Recent moderation logs unavailable. ${logsResponse?.error || 'API endpoint not responding.'}</p>
+                    </div>
+                `;
+            }
+        } catch (logsError) {
+            console.error('Error loading recent logs:', logsError);
+            document.getElementById('recent-modlogs').innerHTML = `
+                <div class="alert alert-warning">
+                    <p>Recent moderation logs unavailable. API endpoint not responding.</p>
+                </div>
+            `;
+        }
+        
+        // Load recent appeals
+        try {
+            const appealsResponse = await apiGet(API.dashboard.recentAppeals());
+            if (appealsResponse && appealsResponse.success) {
+                displayRecentAppeals(appealsResponse.appeals);
+            } else {
+                document.getElementById('recent-appeals').innerHTML = `
+                    <div class="alert alert-warning">
+                        <p>Recent appeals unavailable. ${appealsResponse?.error || 'API endpoint not responding.'}</p>
+                    </div>
+                `;
+            }
+        } catch (appealsError) {
+            console.error('Error loading recent appeals:', appealsError);
+            document.getElementById('recent-appeals').innerHTML = `
+                <div class="alert alert-warning">
+                    <p>Recent appeals unavailable. API endpoint not responding.</p>
+                </div>
+            `;
+        }
     } catch (error) {
         console.error('Error loading dashboard:', error);
-        showErrorMessage('Failed to load dashboard data: ' + error.message, 'dashboard-error');
     }
 }
 
@@ -372,26 +581,105 @@ function displayRecentAppeals(appeals) {
  * @param {string} sectionId The ID of the section to load
  */
 function loadSection(sectionId) {
-    // Find the nav link and click it
-    const navLink = document.querySelector(`.nav-link[data-section="${sectionId}"]`);
-    if (navLink) {
-        navLink.click();
+    console.log('Loading section:', sectionId);
+    
+    try {
+        // Hide all content sections first
+        document.querySelectorAll('.content-section').forEach(section => {
+            section.classList.add('d-none');
+        });
+        
+        // Show the selected section
+        const selectedSection = document.getElementById(sectionId + '-section');
+        if (selectedSection) {
+            selectedSection.classList.remove('d-none');
+            console.log('Section displayed:', sectionId);
+            
+            // Update active nav item
+            document.querySelectorAll('.nav-link').forEach(link => {
+                link.classList.remove('active');
+            });
+            
+            const activeNavItem = document.querySelector(`.nav-link[data-section="${sectionId}"]`);
+            if (activeNavItem) {
+                activeNavItem.classList.add('active');
+            }
+            
+            // Load the section content
+            try {
+                loadSectionContent(sectionId);
+            } catch (error) {
+                console.error(`Error loading ${sectionId} content:`, error);
+                const errorContainer = document.getElementById(`${sectionId}-error`);
+                if (errorContainer) {
+                    errorContainer.innerHTML = `
+                        <div class="alert alert-danger">
+                            <strong>Error loading content:</strong> ${error.message || 'Unknown error'}
+                        </div>
+                    `;
+                }
+            }
+        } else {
+            console.error('Section not found:', sectionId + '-section');
+            // Fallback to dashboard
+            loadSection('dashboard');
+        }
+    } catch (error) {
+        console.error('Error in loadSection:', error);
     }
 }
 
-/**
- * Initializes the application
- */
-function init() {
-    // Initialize authentication
-    initAuth();
+// Initialize auth when DOM is loaded
+document.addEventListener('DOMContentLoaded', function() {
+    console.log("DOM fully loaded, initializing application");
     
-    // Initialize admin panel (will be called after successful login)
-    // The admin panel initialization is handled by the checkAuth function in auth.js
-}
-
-// Initialize the application when the DOM is loaded
-document.addEventListener('DOMContentLoaded', init);
+    // First, hide any loading indicators
+    const loadingElements = document.querySelectorAll('.loading-overlay, #loading');
+    loadingElements.forEach(el => {
+        if (el) {
+            el.classList.add('d-none');
+            el.style.display = 'none';
+        }
+    });
+    
+    // Initialize auth system
+    if (typeof initAuth === 'function') {
+        initAuth();
+    } else {
+        console.error('initAuth function not found');
+    }
+    
+    // If token exists in local storage, force admin panel visibility
+    const token = localStorage.getItem('token');
+    if (token) {
+        console.log("Token found in localStorage, ensuring admin panel is visible");
+        const loginContainer = document.getElementById('login-container');
+        const adminPanel = document.getElementById('admin-panel');
+        
+        if (loginContainer) {
+            loginContainer.classList.add('d-none');
+            loginContainer.setAttribute('style', 'display: none !important');
+        }
+        
+        if (adminPanel) {
+            adminPanel.classList.remove('d-none');
+            adminPanel.setAttribute('style', 'display: block !important');
+            
+            // Force visibility of dashboard section
+            const dashboardSection = document.getElementById('dashboard-section');
+            if (dashboardSection) {
+                dashboardSection.style.display = 'block';
+            }
+        }
+    }
+    
+    // Check if Bootstrap is available
+    if (typeof bootstrap === 'undefined') {
+        console.error('Bootstrap JavaScript is not loaded properly. Some UI components may not work.');
+    } else {
+        console.log('Bootstrap JavaScript is properly loaded.');
+    }
+});
 
 /**
  * Loads the punishments section
@@ -399,7 +687,7 @@ document.addEventListener('DOMContentLoaded', init);
 async function loadPunishments() {
     try {
         // Show loading indicator
-        showSpinner('punishments-list');
+        showSpinner('active-punishments');
         
         // Fetch punishments data
         const response = await apiGet(API.punishments.all());
@@ -407,6 +695,9 @@ async function loadPunishments() {
         if (response && response.success) {
             // Display punishments
             displayPunishments(response.punishments);
+            
+            // Also load punishment history
+            loadPunishmentHistory();
         } else {
             showErrorMessage('Failed to load punishments: ' + (response?.error || 'Unknown error'), 'punishments-error');
         }
@@ -418,36 +709,108 @@ async function loadPunishments() {
 }
 
 /**
+ * Loads the punishment history
+ * @param {number} page The page number (0-based)
+ */
+async function loadPunishmentHistory(page = 0) {
+    try {
+        // Show loading indicator
+        showSpinner('punishment-history');
+        
+        // Get page size from select element
+        const pageSize = document.getElementById('punishments-page-size')?.value || 10;
+        
+        // Fetch punishment history data
+        // Using the base punishments endpoint since the history/all endpoint doesn't exist
+        const response = await apiGet(`${API.punishments.all()}?page=${page}&size=${pageSize}&includeExpired=true`);
+        
+        if (response && response.success) {
+            // Display punishment history
+            displayPunishmentHistory(response.punishments, response);
+            
+            // Update pagination
+            const paginationContainer = document.getElementById('punishments-pagination');
+            if (paginationContainer) {
+                paginationContainer.innerHTML = createPagination(response, loadPunishmentHistory);
+            }
+        } else {
+            console.error('Failed to load punishment history:', response?.error || 'Unknown error');
+            document.getElementById('punishment-history').innerHTML = 
+                '<tr><td colspan="6" class="text-center">Failed to load punishment history.</td></tr>';
+        }
+        
+    } catch (error) {
+        console.error('Error loading punishment history:', error);
+        document.getElementById('punishment-history').innerHTML = 
+            '<tr><td colspan="6" class="text-center">Error loading punishment history.</td></tr>';
+    }
+}
+
+/**
+ * Displays punishment history
+ * 
+ * @param {Array} punishments The punishment history
+ * @param {Object} paginationData The pagination data
+ */
+function displayPunishmentHistory(punishments, paginationData) {
+    const historyElement = document.getElementById('punishment-history');
+    
+    if (!historyElement) {
+        console.error('Element with ID "punishment-history" not found');
+        return;
+    }
+    
+    if (!punishments || punishments.length === 0) {
+        historyElement.innerHTML = '<tr><td colspan="6" class="text-center">No punishment history found.</td></tr>';
+        return;
+    }
+    
+    let html = '';
+    
+    punishments.forEach(punishment => {
+        const typeClass = punishment.type === 'BAN' ? 'danger' : 
+                        punishment.type === 'MUTE' ? 'warning' : 'info';
+        
+        html += `
+            <tr>
+                <td>${punishment.playerName}</td>
+                <td><span class="badge bg-${typeClass}">${punishment.type}</span></td>
+                <td>${truncateString(punishment.reason, 50) || 'N/A'}</td>
+                <td>${punishment.moderator || 'N/A'}</td>
+                <td>${formatDate(punishment.timestamp)}</td>
+                <td>${punishment.duration || (punishment.type === 'WARNING' ? `Warnings: ${punishment.count}` : 'Permanent')}</td>
+            </tr>
+        `;
+    });
+    
+    historyElement.innerHTML = html;
+    
+    // Setup page size change event
+    const pageSizeSelect = document.getElementById('punishments-page-size');
+    if (pageSizeSelect) {
+        pageSizeSelect.onchange = () => loadPunishmentHistory(0); // Reset to first page when changing page size
+    }
+}
+
+/**
  * Displays all punishments
  * 
  * @param {Array} punishments The punishments list
  */
 function displayPunishments(punishments) {
-    const punishmentsList = document.getElementById('punishments-list');
+    const punishmentsList = document.getElementById('active-punishments');
     
-    if (!punishmentsList) return;
-    
-    if (!punishments || punishments.length === 0) {
-        punishmentsList.innerHTML = '<div class="alert alert-info">No active punishments found.</div>';
+    if (!punishmentsList) {
+        console.error('Element with ID "active-punishments" not found');
         return;
     }
     
-    let html = `
-        <div class="table-responsive">
-            <table class="table table-striped">
-                <thead>
-                    <tr>
-                        <th>Player</th>
-                        <th>Type</th>
-                        <th>Reason</th>
-                        <th>Moderator</th>
-                        <th>Date</th>
-                        <th>Duration</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-    `;
+    if (!punishments || punishments.length === 0) {
+        punishmentsList.innerHTML = '<tr><td colspan="7" class="text-center">No active punishments found.</td></tr>';
+        return;
+    }
+    
+    let html = '';
     
     punishments.forEach(punishment => {
         const typeClass = punishment.type === 'BAN' ? 'danger' : 
@@ -471,12 +834,6 @@ function displayPunishments(punishments) {
             </tr>
         `;
     });
-    
-    html += `
-                </tbody>
-            </table>
-        </div>
-    `;
     
     punishmentsList.innerHTML = html;
 }
@@ -885,4 +1242,16 @@ function showLoading(show) {
     
     // Show or hide the loading indicator
     document.getElementById('loading-indicator').style.display = show ? 'flex' : 'none';
+}
+
+/**
+ * View punishments for a specific player
+ * 
+ * @param {string} playerName The player name
+ */
+function viewPlayerPunishments(playerName) {
+    if (!playerName) return;
+    
+    // Load player punishments
+    loadPlayerPunishments(playerName);
 } 
