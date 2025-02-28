@@ -4,4 +4,125 @@ main: org.frizzlenpop.frizzlenMod.FrizzlenMod
 api-version: '1.21'
 load: STARTUP
 authors: [ frizzlenpop ]
-description: A Plugin for Server Moderation
+description: A comprehensive server moderation plugin
+
+commands:
+  kick:
+    description: Kicks a player
+    usage: /kick <player> <reason>
+    permission: frizzlenmod.kick
+  ban:
+    description: Bans a player
+    usage: /ban <player> <reason>
+    permission: frizzlenmod.ban
+  tempban:
+    description: Temporarily bans a player
+    usage: /tempban <player> <time> <reason>
+    permission: frizzlenmod.tempban
+  unban:
+    description: Unbans a player
+    usage: /unban <player>
+    permission: frizzlenmod.unban
+  mute:
+    description: Mutes a player indefinitely
+    usage: /mute <player>
+    permission: frizzlenmod.mute
+  tempmute:
+    description: Temporarily mutes a player
+    usage: /tempmute <player> <time>
+    permission: frizzlenmod.tempmute
+  unmute:
+    description: Unmutes a player
+    usage: /unmute <player>
+    permission: frizzlenmod.unmute
+  warn:
+    description: Warns a player
+    usage: /warn <player> <reason>
+    permission: frizzlenmod.warn
+  freeze:
+    description: Freezes a player in place
+    usage: /freeze <player>
+    permission: frizzlenmod.freeze
+  vanish:
+    description: Enables vanish mode
+    usage: /vanish
+    permission: frizzlenmod.vanish
+  invsee:
+    description: Views a player's inventory
+    usage: /invsee <player>
+    permission: frizzlenmod.invsee
+  endersee:
+    description: Views a player's Ender Chest
+    usage: /endersee <player>
+    permission: frizzlenmod.endersee
+  chatmute:
+    description: Mutes the entire chat
+    usage: /chatmute
+    permission: frizzlenmod.chatmute
+  chatclear:
+    description: Clears the chat
+    usage: /chatclear
+    permission: frizzlenmod.chatclear
+  slowmode:
+    description: Enables slow mode
+    usage: /slowmode <seconds>
+    permission: frizzlenmod.slowmode
+  report:
+    description: Reports a player
+    usage: /report <player> <reason>
+    permission: frizzlenmod.report
+  modlogs:
+    description: Checks moderation history
+    usage: /modlogs <player>
+    permission: frizzlenmod.modlogs
+  setjail:
+    description: Sets the jail location
+    usage: /setjail <name>
+    permission: frizzlenmod.setjail
+  jail:
+    description: Sends a player to a jail
+    usage: /jail <player> <name> [time]
+    permission: frizzlenmod.jail
+  unjail:
+    description: Releases a player from jail
+    usage: /unjail <player>
+    permission: frizzlenmod.unjail
+
+permissions:
+  frizzlenmod.admin:
+    description: Gives all FrizzlenMod permissions
+    children:
+      frizzlenmod.kick: true
+      frizzlenmod.ban: true
+      frizzlenmod.tempban: true
+      frizzlenmod.unban: true
+      frizzlenmod.mute: true
+      frizzlenmod.tempmute: true
+      frizzlenmod.unmute: true
+      frizzlenmod.warn: true
+      frizzlenmod.freeze: true
+      frizzlenmod.vanish: true
+      frizzlenmod.invsee: true
+      frizzlenmod.endersee: true
+      frizzlenmod.chatmute: true
+      frizzlenmod.chatclear: true
+      frizzlenmod.slowmode: true
+      frizzlenmod.modlogs: true
+      frizzlenmod.setjail: true
+      frizzlenmod.jail: true
+      frizzlenmod.unjail: true
+  frizzlenmod.mod:
+    description: Gives basic moderation permissions
+    children:
+      frizzlenmod.kick: true
+      frizzlenmod.tempmute: true
+      frizzlenmod.unmute: true
+      frizzlenmod.warn: true
+      frizzlenmod.freeze: true
+      frizzlenmod.vanish: true
+      frizzlenmod.invsee: true
+      frizzlenmod.chatclear: true
+      frizzlenmod.modlogs: true
+  frizzlenmod.report:
+    description: Allows players to report others
+    default: true
