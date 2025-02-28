@@ -4,6 +4,7 @@ import org.bukkit.Bukkit;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.frizzlenpop.frizzlenMod.FrizzlenMod;
+import org.frizzlenpop.frizzlenMod.utils.TimeUtils;
 
 import java.util.ArrayList;
 import java.util.Date;
@@ -305,5 +306,110 @@ public class StorageManager {
         }
         
         return reports;
+    }
+    
+    /**
+     * Creates or gets a configuration file
+     * 
+     * @param fileName The name of the configuration file (without extension)
+     * @return The FileConfiguration
+     */
+    public FileConfiguration createOrGetConfig(String fileName) {
+        return configManager.createConfigFile(fileName);
+    }
+    
+    /**
+     * Saves a configuration file
+     * 
+     * @param config The configuration to save
+     * @param fileName The name of the file to save to (without extension)
+     */
+    public void saveConfig(FileConfiguration config, String fileName) {
+        configManager.saveConfigFile(config, fileName);
+    }
+    
+    /**
+     * Gets all moderation logs
+     * 
+     * @return A list of all moderation logs
+     */
+    public List<ModAction> getAllModLogs() {
+        List<ModAction> logs = new ArrayList<>();
+        
+        // Check if there are any logs
+        if (modLogsConfig.getKeys(false).isEmpty()) {
+            return logs;
+        }
+        
+        // Loop through all log entries
+        for (String key : modLogsConfig.getKeys(false)) {
+            ConfigurationSection section = modLogsConfig.getConfigurationSection(key);
+            if (section == null) continue;
+            
+            String staffName = section.getString("moderator", "Unknown");
+            String target = section.getString("target", "Unknown");
+            String actionType = section.getString("action", "Unknown");
+            String reason = section.getString("reason", "");
+            String duration = section.getString("duration", "");
+            long timestamp = section.getLong("timestamp", 0);
+            
+            UUID id = UUID.randomUUID();
+            Date date = new Date(timestamp);
+            
+            logs.add(new ModAction(id, staffName, target, actionType, reason, duration, date));
+        }
+        
+        return logs;
+    }
+    
+    /**
+     * Parses a time string (e.g., "1d", "2h", "30m") into milliseconds
+     * 
+     * @param timeString The time string to parse
+     * @return The time in milliseconds
+     */
+    public long parseTimeString(String timeString) {
+        if (timeString == null || timeString.isEmpty()) {
+            return 0;
+        }
+        
+        return TimeUtils.parseTimeString(timeString);
+    }
+    
+    /**
+     * Retrieves a list of moderation actions for a specific player
+     * 
+     * @param playerName The name of the player to get actions for
+     * @return A list of ModAction objects
+     */
+    public List<ModAction> getPlayerModActions(String playerName) {
+        List<ModAction> actions = new ArrayList<>();
+        
+        // Check if there are any logs
+        if (modLogsConfig.getKeys(false).isEmpty()) {
+            return actions;
+        }
+        
+        // Loop through all log entries
+        for (String key : modLogsConfig.getKeys(false)) {
+            ConfigurationSection section = modLogsConfig.getConfigurationSection(key);
+            if (section == null) continue;
+            
+            String target = section.getString("target");
+            if (target != null && target.equalsIgnoreCase(playerName)) {
+                String moderatorName = section.getString("moderator", "Unknown");
+                String actionType = section.getString("action", "Unknown");
+                String reason = section.getString("reason", "");
+                String duration = section.getString("duration", "");
+                long timestamp = section.getLong("timestamp", 0);
+                
+                UUID id = UUID.randomUUID();
+                Date date = new Date(timestamp);
+                
+                actions.add(new ModAction(id, moderatorName, target, actionType, reason, duration, date));
+            }
+        }
+        
+        return actions;
     }
 } 

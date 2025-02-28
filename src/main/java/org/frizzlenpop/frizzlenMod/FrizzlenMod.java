@@ -22,6 +22,7 @@ public final class FrizzlenMod extends JavaPlugin {
     private JailManager jailManager;
     private VanishManager vanishManager;
     private ChatManager chatManager;
+    private UserManager userManager;
     private Logger logger;
     
     @Override
@@ -40,6 +41,7 @@ public final class FrizzlenMod extends JavaPlugin {
         jailManager = new JailManager(this);
         vanishManager = new VanishManager(this);
         chatManager = new ChatManager(this);
+        userManager = new UserManager(this);
         
         // Register commands
         registerCommands();
@@ -52,40 +54,28 @@ public final class FrizzlenMod extends JavaPlugin {
     }
     
     private void registerCommands() {
-        // Player moderation commands
-        getCommand("kick").setExecutor(new KickCommand(this));
+        // Register all commands
         getCommand("ban").setExecutor(new BanCommand(this));
         getCommand("tempban").setExecutor(new TempBanCommand(this));
         getCommand("unban").setExecutor(new UnbanCommand(this));
         getCommand("mute").setExecutor(new MuteCommand(this));
         getCommand("tempmute").setExecutor(new TempMuteCommand(this));
         getCommand("unmute").setExecutor(new UnmuteCommand(this));
+        getCommand("kick").setExecutor(new KickCommand(this));
         getCommand("warn").setExecutor(new WarnCommand(this));
-        
-        // Player surveillance commands
         getCommand("freeze").setExecutor(new FreezeCommand(this));
+        getCommand("unfreeze").setExecutor(new UnfreezeCommand(this));
         getCommand("vanish").setExecutor(new VanishCommand(this));
-        getCommand("invsee").setExecutor(new InvseeCommand(this));
-        getCommand("endersee").setExecutor(new EnderseeCommand(this));
-        
-        // Chat control commands
-        getCommand("chatmute").setExecutor(new ChatMuteCommand(this));
-        getCommand("chatclear").setExecutor(new ChatClearCommand(this));
-        getCommand("slowmode").setExecutor(new SlowModeCommand(this));
-        
-        // Jail commands
-        getCommand("setjail").setExecutor(new SetJailCommand(this));
+        getCommand("report").setExecutor(new ReportCommand(this));
         getCommand("jail").setExecutor(new JailCommand(this));
         getCommand("unjail").setExecutor(new UnjailCommand(this));
-        
-        // Logging and report commands
-        getCommand("report").setExecutor(new ReportCommand(this));
         getCommand("modlogs").setExecutor(new ModLogsCommand(this));
     }
     
     private void registerListeners() {
-        Bukkit.getPluginManager().registerEvents(new PlayerChatListener(this), this);
+        // Register all listeners
         Bukkit.getPluginManager().registerEvents(new PlayerConnectionListener(this), this);
+        Bukkit.getPluginManager().registerEvents(new PlayerChatListener(this), this);
         Bukkit.getPluginManager().registerEvents(new PlayerMovementListener(this), this);
         Bukkit.getPluginManager().registerEvents(new InventoryListener(this), this);
     }
@@ -129,5 +119,9 @@ public final class FrizzlenMod extends JavaPlugin {
     
     public ChatManager getChatManager() {
         return chatManager;
+    }
+    
+    public UserManager getUserManager() {
+        return userManager;
     }
 }

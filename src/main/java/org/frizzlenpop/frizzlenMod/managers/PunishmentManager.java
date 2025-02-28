@@ -1,6 +1,7 @@
 package org.frizzlenpop.frizzlenMod.managers;
 
 import org.bukkit.Bukkit;
+import org.bukkit.BanList;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.Player;
@@ -8,6 +9,7 @@ import org.frizzlenpop.frizzlenMod.FrizzlenMod;
 import org.frizzlenpop.frizzlenMod.utils.TimeUtils;
 
 import java.util.*;
+import java.util.Date;
 
 public class PunishmentManager {
     private final FrizzlenMod plugin;
@@ -117,8 +119,8 @@ public class PunishmentManager {
         savePunishments();
     }
     
-    public void tempMutePlayer(UUID playerUUID, long durationMinutes) {
-        long expiryTime = System.currentTimeMillis() + (durationMinutes * 60 * 1000);
+    public void tempMutePlayer(UUID playerUUID, long durationMillis) {
+        long expiryTime = System.currentTimeMillis() + durationMillis;
         tempMutedPlayers.put(playerUUID, expiryTime);
         savePunishments();
     }
@@ -129,7 +131,7 @@ public class PunishmentManager {
         savePunishments();
     }
     
-    public boolean isPlayerMuted(UUID playerUUID) {
+    public boolean isMuted(UUID playerUUID) {
         return mutedPlayers.contains(playerUUID) || tempMutedPlayers.containsKey(playerUUID);
     }
     
@@ -166,53 +168,153 @@ public class PunishmentManager {
         return playerWarnings.getOrDefault(playerUUID, 0);
     }
     
-    public void clearPlayerWarnings(UUID playerUUID) {
-        playerWarnings.remove(playerUUID);
-        savePunishments();
-    }
-    
-    private void checkWarningEscalation(UUID playerUUID, int warnings, String reason) {
-        // This will be implemented based on the plugin's configuration
-        FileConfiguration config = plugin.getConfig();
+    private void checkWarningEscalation(UUID playerUUID, int warningCount, String reason) {
+        // Get the warning thresholds from config
+        int muteThreshold = plugin.getConfig().getInt("warnings.mute-threshold", 3);
+        int kickThreshold = plugin.getConfig().getInt("warnings.kick-threshold", 5);
+        int tempBanThreshold = plugin.getConfig().getInt("warnings.temp-ban-threshold", 7);
+        int banThreshold = plugin.getConfig().getInt("warnings.ban-threshold", 10);
         
-        if (config.getBoolean("warnings.auto-punish", true)) {
-            if (warnings >= config.getInt("warnings.ban-threshold", 5)) {
-                // Auto-ban the player
-                OfflinePlayer player = Bukkit.getOfflinePlayer(playerUUID);
-                Bukkit.dispatchCommand(Bukkit.getConsoleSender(), 
-                        "ban " + player.getName() + " Exceeded maximum warnings: " + reason);
-            } else if (warnings >= config.getInt("warnings.temp-ban-threshold", 4)) {
-                // Auto temp-ban the player
-                OfflinePlayer player = Bukkit.getOfflinePlayer(playerUUID);
-                String tempBanTime = config.getString("warnings.temp-ban-duration", "1d");
-                Bukkit.dispatchCommand(Bukkit.getConsoleSender(), 
-                        "tempban " + player.getName() + " " + tempBanTime + " Multiple warnings: " + reason);
-            } else if (warnings >= config.getInt("warnings.mute-threshold", 3)) {
-                // Auto mute the player
-                OfflinePlayer player = Bukkit.getOfflinePlayer(playerUUID);
-                String muteTime = config.getString("warnings.mute-duration", "1h");
-                Bukkit.dispatchCommand(Bukkit.getConsoleSender(), 
-                        "tempmute " + player.getName() + " " + muteTime + " Multiple warnings");
-            } else if (warnings >= config.getInt("warnings.kick-threshold", 2)) {
-                // Auto kick the player if online
-                Player player = Bukkit.getPlayer(playerUUID);
-                if (player != null && player.isOnline()) {
-                    player.kickPlayer("Received multiple warnings: " + reason);
-                }
-            }
+        Player player = Bukkit.getPlayer(playerUUID);
+        if (player == null) return; // Player is offline
+        
+        if (warningCount >= banThreshold) {
+            // Permanent ban
+            banPlayer(playerUUID, "Exceeded warning limit: " + reason);
+            return;
+        }
+        
+        if (warningCount >= tempBanThreshold) {
+            // Temporary ban
+            String banDuration = plugin.getConfig().getString("warnings.temp-ban-duration", "1d");
+            long durationMillis = TimeUtils.parseTimeString(banDuration);
+            tempBanPlayer(playerUUID, "Exceeded warning limit: " + reason, durationMillis);
+            return;
+        }
+        
+        if (warningCount >= kickThreshold) {
+            // Kick player
+            player.kickPlayer("You have received " + warningCount + " warnings. Last warning: " + reason);
+            return;
+        }
+        
+        if (warningCount >= muteThreshold) {
+            // Mute player
+            mutePlayer(playerUUID);
+            player.sendMessage("§cYou have been muted due to receiving " + warningCount + " warnings.");
         }
     }
     
     // Player freeze methods
     public void freezePlayer(UUID playerUUID) {
         frozenPlayers.add(playerUUID);
+        
+        // Notify the player
+        Player player = Bukkit.getPlayer(playerUUID);
+        if (player != null && player.isOnline()) {
+            player.sendMessage("§cYou have been frozen by a staff member. Do not disconnect!");
+        }
     }
     
     public void unfreezePlayer(UUID playerUUID) {
         frozenPlayers.remove(playerUUID);
+        
+        // Notify the player
+        Player player = Bukkit.getPlayer(playerUUID);
+        if (player != null && player.isOnline()) {
+            player.sendMessage("§aYou have been unfrozen.");
+        }
     }
     
-    public boolean isPlayerFrozen(UUID playerUUID) {
+    public boolean isFrozen(UUID playerUUID) {
         return frozenPlayers.contains(playerUUID);
+    }
+    
+    // Ban methods
+    public void banPlayer(UUID playerUUID, String reason) {
+        OfflinePlayer player = Bukkit.getOfflinePlayer(playerUUID);
+        Bukkit.getBanList(BanList.Type.NAME).addBan(player.getName(), reason, null, null);
+        
+        // Kick if online
+        Player onlinePlayer = player.getPlayer();
+        if (onlinePlayer != null && onlinePlayer.isOnline()) {
+            onlinePlayer.kickPlayer("You have been banned: " + reason);
+        }
+    }
+    
+    public void tempBanPlayer(UUID playerUUID, String reason, long durationMillis) {
+        OfflinePlayer player = Bukkit.getOfflinePlayer(playerUUID);
+        Date expiry = new Date(System.currentTimeMillis() + durationMillis);
+        Bukkit.getBanList(BanList.Type.NAME).addBan(player.getName(), reason, expiry, null);
+        
+        // Kick if online
+        Player onlinePlayer = player.getPlayer();
+        if (onlinePlayer != null && onlinePlayer.isOnline()) {
+            onlinePlayer.kickPlayer("You have been temporarily banned: " + reason);
+        }
+    }
+    
+    public void unbanPlayer(UUID playerUUID) {
+        OfflinePlayer player = Bukkit.getOfflinePlayer(playerUUID);
+        Bukkit.getBanList(BanList.Type.NAME).pardon(player.getName());
+    }
+    
+    public boolean isBanned(UUID playerUUID) {
+        OfflinePlayer player = Bukkit.getOfflinePlayer(playerUUID);
+        return Bukkit.getBanList(BanList.Type.NAME).isBanned(player.getName());
+    }
+    
+    /**
+     * Gets all muted players
+     * 
+     * @return A map of player UUIDs to mute reasons
+     */
+    public Map<UUID, String> getAllMutedPlayers() {
+        Map<UUID, String> mutedPlayers = new HashMap<>();
+        
+        // Add permanently muted players
+        for (UUID uuid : this.mutedPlayers) {
+            mutedPlayers.put(uuid, "Permanent");
+        }
+        
+        // Add temporarily muted players with remaining time
+        for (Map.Entry<UUID, Long> entry : this.tempMutedPlayers.entrySet()) {
+            long remaining = entry.getValue() - System.currentTimeMillis();
+            if (remaining > 0) {
+                mutedPlayers.put(entry.getKey(), TimeUtils.formatTime(remaining));
+            }
+        }
+        
+        return mutedPlayers;
+    }
+    
+    /**
+     * Checks if a player is muted (alias for isMuted for backward compatibility)
+     * 
+     * @param playerUUID The UUID of the player to check
+     * @return true if the player is muted
+     */
+    public boolean isPlayerMuted(UUID playerUUID) {
+        return isMuted(playerUUID);
+    }
+    
+    /**
+     * Checks if a player is frozen (alias for isFrozen for backward compatibility)
+     * 
+     * @param playerUUID The UUID of the player to check
+     * @return true if the player is frozen
+     */
+    public boolean isPlayerFrozen(UUID playerUUID) {
+        return isFrozen(playerUUID);
+    }
+    
+    /**
+     * Clears all warnings for a player
+     * 
+     * @param playerUUID The UUID of the player to clear warnings for
+     */
+    public void clearPlayerWarnings(UUID playerUUID) {
+        playerWarnings.remove(playerUUID);
+        savePunishments();
     }
 } 

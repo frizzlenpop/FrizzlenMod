@@ -77,6 +77,13 @@ public class TimeUtils {
     }
     
     /**
+     * Alias for parseTimeString for backward compatibility
+     */
+    public static long parseDuration(String timeString) {
+        return parseTimeString(timeString);
+    }
+    
+    /**
      * Formats milliseconds into a human-readable time string
      * 
      * @param millis The time in milliseconds
