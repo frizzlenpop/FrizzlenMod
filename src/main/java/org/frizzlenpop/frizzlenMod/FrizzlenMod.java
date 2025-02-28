@@ -66,10 +66,21 @@ public final class FrizzlenMod extends JavaPlugin {
         getCommand("freeze").setExecutor(new FreezeCommand(this));
         getCommand("unfreeze").setExecutor(new UnfreezeCommand(this));
         getCommand("vanish").setExecutor(new VanishCommand(this));
+        getCommand("invsee").setExecutor(new InvseeCommand(this));
+        getCommand("endersee").setExecutor(new EnderseeCommand(this));
+        getCommand("chatmute").setExecutor(new ChatMuteCommand(this));
+        getCommand("chatclear").setExecutor(new ChatClearCommand(this));
+        getCommand("slowmode").setExecutor(new SlowModeCommand(this));
         getCommand("report").setExecutor(new ReportCommand(this));
+        getCommand("setjail").setExecutor(new SetJailCommand(this));
         getCommand("jail").setExecutor(new JailCommand(this));
         getCommand("unjail").setExecutor(new UnjailCommand(this));
         getCommand("modlogs").setExecutor(new ModLogsCommand(this));
+        
+        // Check if clearwarnings command exists in plugin.yml
+        if (getCommand("clearwarnings") != null) {
+            getCommand("clearwarnings").setExecutor(new ClearWarningsCommand(this));
+        }
     }
     
     private void registerListeners() {

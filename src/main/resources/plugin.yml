@@ -43,6 +43,10 @@ commands:
     description: Freezes a player in place
     usage: /freeze <player>
     permission: frizzlenmod.freeze
+  unfreeze:
+    description: Unfreezes a player
+    usage: /unfreeze <player>
+    permission: frizzlenmod.unfreeze
   vanish:
     description: Enables vanish mode
     usage: /vanish
@@ -87,6 +91,10 @@ commands:
     description: Releases a player from jail
     usage: /unjail <player>
     permission: frizzlenmod.unjail
+  clearwarnings:
+    description: Clears all warnings for a player
+    usage: /clearwarnings <player>
+    permission: frizzlenmod.clearwarnings
 
 permissions:
   frizzlenmod.admin:
@@ -101,6 +109,7 @@ permissions:
       frizzlenmod.unmute: true
       frizzlenmod.warn: true
       frizzlenmod.freeze: true
+      frizzlenmod.unfreeze: true
       frizzlenmod.vanish: true
       frizzlenmod.invsee: true
       frizzlenmod.endersee: true
@@ -111,6 +120,7 @@ permissions:
       frizzlenmod.setjail: true
       frizzlenmod.jail: true
       frizzlenmod.unjail: true
+      frizzlenmod.clearwarnings: true
   frizzlenmod.mod:
     description: Gives basic moderation permissions
     children:
@@ -119,10 +129,12 @@ permissions:
       frizzlenmod.unmute: true
       frizzlenmod.warn: true
       frizzlenmod.freeze: true
+      frizzlenmod.unfreeze: true
       frizzlenmod.vanish: true
       frizzlenmod.invsee: true
       frizzlenmod.chatclear: true
       frizzlenmod.modlogs: true
+      frizzlenmod.clearwarnings: true
   frizzlenmod.report:
     description: Allows players to report others
     default: true
